@@ -51,7 +51,7 @@ def decrypt(message, seed):
 @tree.command(name="encrypt", description="Encrypts a message with a seed")
 async def encrypt_command(interaction, seed: str, message: str):
     result = encrypt(message, seed)
-    await interaction.response.send_message(result, ephemeral=False)
+    await interaction.response.send_message(result)
 
 
 @tree.command(name="decrypt", description="Decrypts a message with a seed")

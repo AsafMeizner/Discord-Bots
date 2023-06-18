@@ -49,23 +49,32 @@ def decrypt(message, seed):
 
 
 @tree.command(name="encrypt", description="Encrypts a message with a seed")
-async def encrypt_command(ctx, seed: str, message: str):
+async def encrypt_command(interation, seed: str, message: str):
     encrypted_message = encrypt(message, seed)
 
+    await interation.response.send_message("Message sent!", ephemeral=True)
+
     # Create a webhook using the command invoker as the cloned user
-    webhook = await ctx.channel.create_webhook(name=ctx.author.display_name)
+    webhook = await interation.channel.create_webhook(name=interation.user.display_name)
 
     # Send the encrypted message as the cloned user
-    await webhook.send(content=encrypted_message, username=ctx.author.display_name, avatar_url=ctx.author.avatar.url)
+    await webhook.send(content=":lock: " + encrypted_message, username=interation.user.display_name, avatar_url=interation.user.avatar.url)
+    # await webhook.send(content=encrypted_message, username="hi")
+
     await webhook.delete()
+
+@tree.command(name="who-am-i", description="types the name of the user who typed the command") 
+async def who_am_i_command(ctx):
+    await ctx.send(ctx.author.display_name)
+
 
 
 @tree.command(name="decrypt", description="Decrypts a message with a seed")
-async def decrypt_command(ctx, seed: str, message: str):
+async def decrypt_command(interaction, seed: str, message: str):
     decrypted_message = decrypt(message, seed)
 
     # Reply with the decrypted message
-    await ctx.send(f"Decrypted message: {decrypted_message}")
+    await interaction.response.send_message(":unlock: " + decrypted_message, ephemeral=True)
 
 
 @client.event
