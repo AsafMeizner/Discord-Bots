@@ -51,6 +51,8 @@ def decrypt(message, seed):
 @tree.command(name="encrypt", description="Encrypts a message with a seed")
 async def encrypt_command(interation, seed: str, message: str):
     encrypted_message = encrypt(message, seed)
+    for i in range(0, 5):
+        encrypted_message = encrypt(encrypted_message, seed)
 
     await interation.response.send_message("Message sent!", ephemeral=True)
 
@@ -70,8 +72,10 @@ async def who_am_i_command(ctx):
 
 
 @tree.command(name="decrypt", description="Decrypts a message with a seed")
-async def decrypt_command(interaction, seed: str, message: str):
+async def decrypt_command(interaction, seed: str, message: str):    
     decrypted_message = decrypt(message, seed)
+    for i in range(0, 5):
+        decrypted_message = decrypt(decrypted_message, seed)
 
     # Reply with the decrypted message
     await interaction.response.send_message(":unlock: " + decrypted_message, ephemeral=True)
