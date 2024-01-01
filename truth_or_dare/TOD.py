@@ -1,14 +1,13 @@
 import discord
 from discord import app_commands
-from dis_token import *
 
-import random
-from dis_token import TOD 
-from dis_token import TruthOrDare
 import os
+import random
+import string
 
 current_directory = os.getcwd()
 
+from dis_token import TOD
 token = TOD
 
 intents = discord.Intents.default()
@@ -21,68 +20,79 @@ def load_questions(file_path):
         questions = file.readlines()
     return questions
 
-def write_questions(file_path, questions):
-    with open(file_path, "w") as file:
-        file.writelines(questions)
-
 truth_file = current_directory + "\\truth_or_dare\\truth_file.txt"
 dare_file = current_directory + "\\truth_or_dare\\dare_file.txt"
 
 truth_questions = load_questions(truth_file)
 dare_questions = load_questions(dare_file)
 
-# @tree.command(name="truth", description="gives you a random truth ☺️")
-# async def clone_command(interation):
-#     question = random.choice(truth_questions)
-#     await interation.response.send_message(question)
+# Store the user responses for the Rice Purity Test
+user_responses = {}
 
-# @tree.command(name="dare", description="gives you a random dare 😈")
-# async def clone_command(interation):
-#     dare = random.choice(dare_questions)
-#     await interation.response.send_message(dare)
+class TruthOrDareView(discord.ui.View):
+    def __init__(self, interaction):
+        super().__init__(timeout=180.0)
+        self.interaction = interaction
+        self.question_type = None  # Store the current question type
 
-@tree.command(name="addtruth", description="add a truth to the file")
-async def add_truth_command(interaction, *, truth: str):
-    truth_questions.append(truth + "\n")
-    write_questions(truth_file, truth_questions)
-    await interaction.response.send_message(f"Added truth: {truth}")
+    async def send_initial_question(self, question_type):
+        self.question_type = question_type
+        question = self.get_random_question()
+        embed = self.create_embed(question)
+        await self.interaction.response.send_message(embed=embed, view=self)
 
-@tree.command(name="adddare", description="add a dare to the file")
-async def add_dare_command(interaction, *, dare: str):
-    dare_questions.append(dare + "\n")
-    write_questions(dare_file, dare_questions)
-    await interaction.response.send_message(f"Added dare: {dare}")
+    async def send_question(self):
+        question = self.get_random_question()
+        embed = self.create_embed(question)
+        await self.interaction.followup.send(embed=embed, view=self)
 
-@tree.command(name="dare", description="gives you a random dare 😈")
-async def dare_from_console_command(interaction):
-    # only send to console if person using the command is the id 693128994488320001
-    if interaction.user.id == 693128994488320001 or interaction.user.id == 851777628352282634:
-        await interaction.response.send_message("thinking of new dare...", ephemeral=True)
-        dare = input("Enter a dare: ")
-        if dare == "!":
-            dare = random.choice(dare_questions)
-        await interaction.followup.send(dare)
-    else:
-        dare = random.choice(dare_questions)
-        await interaction.response.send_message(dare)
+    def get_random_question(self):
+        if self.question_type == "truth":
+            return random.choice(truth_questions).strip()
+        elif self.question_type == "dare":
+            return random.choice(dare_questions).strip()
 
-@tree.command(name="truth", description="gives you a random truth ☺️")
+    def create_embed(self, question):
+        embed = discord.Embed(
+            title=f"Random {self.question_type.capitalize()}",
+            description=question,
+            color=discord.Color.blurple(),
+        )
+        embed.set_author(
+            name=f"Requested by {self.interaction.user.display_name}",
+            icon_url=self.interaction.user.avatar.url,
+        )
+        return embed
+
+    @discord.ui.button(label="Truth", style=discord.ButtonStyle.green)
+    async def on_truth(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.question_type = "truth"
+        await self.send_question()
+
+    @discord.ui.button(label="Dare", style=discord.ButtonStyle.red)
+    async def on_dare(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.question_type = "dare"
+        await self.send_question()
+
+    @discord.ui.button(label="Random", style=discord.ButtonStyle.blurple)
+    async def on_random(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.question_type = random.choice(["truth", "dare"])
+        await self.send_question()
+
+@tree.command(name="truth", description="Gives you a random truth ☺️")
 async def truth_from_console_command(interaction):
-    # only send to console if person using the command is the id 693128994488320001
-    if interaction.user.id == 693128994488320001 or interaction.user.id == 851777628352282634:
-        await interaction.response.send_message("thinking of new truth...", ephemeral=True)
-        truth = input("Enter a truth: ")
-        if truth == "!":
-            truth = random.choice(truth_questions)
-        await interaction.followup.send(truth)
-    else:
-        truth = random.choice(truth_questions)
-        await interaction.response.send_message(truth)
+    view = TruthOrDareView(interaction)
+    await view.send_initial_question("truth")
 
+@tree.command(name="dare", description="Gives you a random dare 😈")
+async def dare_from_console_command(interaction):
+    view = TruthOrDareView(interaction)
+    await view.send_initial_question("dare")
+    
 @client.event
 async def on_ready():
     await tree.sync()
     print("Ready!")
-    await client.change_presence(activity=discord.Game(name="/dares or /truths"))
+    await client.change_presence(activity=discord.Game(name="/truth or /dare"))
 
-client.run(TOD)
+client.run(token)
