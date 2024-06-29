@@ -1,9 +1,6 @@
 import discord
 from discord import app_commands
-
 import os
-import random
-import string
 
 current_directory = os.getcwd()
 
@@ -48,16 +45,18 @@ class RicePurityView(discord.ui.View):
             await self.message.edit(embed=embed, view=self)
 
     @discord.ui.button(label="Yes", style=discord.ButtonStyle.green)
-    async def on_yes(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def on_yes(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
         await self.process_response("yes")
 
     @discord.ui.button(label="No", style=discord.ButtonStyle.red)
-    async def on_no(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def on_no(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
         await self.process_response("no")
 
     @discord.ui.button(label="Stop", style=discord.ButtonStyle.grey)
-    async def on_stop(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.defer(ephemeral=True)
+    async def on_stop(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True)
         await interaction.followup.send("Rice Purity Test stopped.", ephemeral=True)
 
     async def process_response(self, answer: str):
@@ -77,14 +76,11 @@ class RicePurityView(discord.ui.View):
 
 async def setup():
     print("Ready!")
-    try:
-        await tree.sync()
-    except discord.app_commands.errors.CommandInvokeError:
-        pass
+    await tree.sync()
     await client.change_presence(activity=discord.Game(name="/ricepurity"))
 
 @tree.command(name="ricepurity", description="Take the Rice Purity Test! Respond with buttons 'Yes' or 'No'. Type '!stop' to end the test.")
-async def rice_purity_test_command(interaction, anonymous: str = "false"):
+async def rice_purity_test_command(interaction: discord.Interaction, anonymous: str = "false"):
     await interaction.response.send_message("Starting Rice Purity Test...", ephemeral=True)
 
     anonymous = anonymous.lower().strip()

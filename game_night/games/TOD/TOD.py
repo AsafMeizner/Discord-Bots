@@ -2,29 +2,10 @@ import discord
 from discord import app_commands
 import os
 import random
-
-current_directory = os.getcwd()
-
-from dis_token import TOD
-token = TOD
-
-intents = discord.Intents.default()
-client = discord.Client(intents=intents)
-tree = app_commands.CommandTree(client)
-
-# Load truth and dare questions from files
-def load_questions(file_path):
-    with open(file_path, "r") as file:
-        questions = file.readlines()
-    return questions
-
-truth_file = os.path.join(current_directory, "truth_or_dare", "truth_file.txt")
-dare_file = os.path.join(current_directory, "truth_or_dare", "dare_file.txt")
-
-truth_questions = load_questions(truth_file)
-dare_questions = load_questions(dare_file)
+from main import truth_questions, dare_questions
 
 class TruthOrDareView(discord.ui.View):
+
     def __init__(self, interaction):
         super().__init__(timeout=180.0)
         self.interaction = interaction
@@ -82,21 +63,3 @@ class TruthOrDareView(discord.ui.View):
     async def on_random(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.question_type = random.choice(["truth", "dare"])
         await self.send_question(interaction)
-
-@tree.command(name="truth", description="Gives you a random truth ☺️")
-async def truth_from_console_command(interaction: discord.Interaction):
-    view = TruthOrDareView(interaction)
-    await view.send_initial_question("truth")
-
-@tree.command(name="dare", description="Gives you a random dare 😈")
-async def dare_from_console_command(interaction: discord.Interaction):
-    view = TruthOrDareView(interaction)
-    await view.send_initial_question("dare")
-
-@client.event
-async def on_ready():
-    await tree.sync()
-    print("Ready!")
-    await client.change_presence(activity=discord.Game(name="/truth or /dare"))
-
-client.run(token)
